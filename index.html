@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base target="_top">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+	<title>Multi-Criteria Assessment for City-Wide Rooftop Solar PV Deployment: A Case Study of Bandung, Indonesia</title>
+	
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.1/dist/leaflet.css" integrity="sha256-sA+zWATbFveLLNqWO2gtiw3HL/lh1giY/Inf1BJ0z14=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.1/dist/leaflet.js" integrity="sha256-NDI0K41gVbWqfkkaHj15IzU7PtMoelkzyKp8TOaFQ3s=" crossorigin=""></script>
+    
+    <link rel="stylesheet" href="./src/leaflet.legend.css" />
+    <script type="text/javascript" src="./src/leaflet.legend.js"></script>
+
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		.leaflet-container {
+			height: 100%;
+			width: 100%;
+			max-width: 100%;
+			max-height: 100%;
+		}
+        .legend {
+            line-height: 18px;
+            color: #fff;
+            background-color: #808080;
+            padding-left: 5px;
+            padding-bottom: 5px;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 1;
+        }
+        .info {
+            color: #fff;    
+            width: 200px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+            background-color: #808080;
+            padding-left: 5px;
+            padding-bottom: 5px;
+            padding-right: 5px;
+        }
+	</style>
+
+	
+</head>
+<body>
+
+<div id='map'></div>
+<script type="text/javascript" src="https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0"></script>
+<script type="text/javascript" src="./data/kon_energi_epsg4326wgs84.js"></script>
+<script type="text/javascript" src="./data/solar_pv_epsg4326wgs84_new.js"></script>
+<script type="text/javascript" src="./data/prnonmw_epsg4326wgs84_new.js"></script>
+
+
+<script type="text/javascript">
+    
+    //Center of Map Settings
+	var map = L.map('map').setView([-6.896051154236279, 107.5610411838738], 18);
+    
+    //Layer Groups
+    var konsumsi_energi_json = L.layerGroup();
+    var solar_pv_json = L.layerGroup();
+    var prnonmw_json = L.layerGroup();
+
+    //Basemap
+	var tiles = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+		maxZoom: 18,
+		attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+	}).addTo(map);
+
+	/* GeoJSON in .js data from konsumsi_energi, solar_pv, and prnonmw */
+	var geojson1 = L.geoJson(konsumsi_energi).addTo(konsumsi_energi_json);
+    var geojson2 = L.geoJson(solar_pv).addTo(solar_pv_json);
+    var geojson3 = L.geoJson(prnonmw).addTo(prnonmw_json);
+
+    //Overlays
+
+    var baseLayers = {
+        "Toner": tiles,
+    };
+    var overlays = {
+        "Konsumsi Energi": konsumsi_energi_json,
+        "Solar PV": solar_pv_json,
+        "Prioritas Non MW": prnonmw_json
+    };
+
+    //Add Overlays to map
+    L.control.layers(overlays).addTo(map);
+
+    //Additional Info
+    var info = L.control();
+
+    info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this.update();
+        return this._div;
+    };
+
+    // method that we will use to update the control based on feature properties passed
+    info.update = function (props) {
+        this._div.innerHTML = '<h2>Multi-Criteria Assessment for City-Wide Rooftop Solar PV Deployment: A Case Study of Bandung, Indonesia</h2><p>This research aims to model the urban rooftop solar PV development in the Global South using Bandung, Indonesia, as a case study. This research also has several specific purposes: developing a building height model as well as determining the energy potential of rooftop solar PV, the energy needs of each building, and the residential property index. This study is among the first to develop the national digital surface model (DSM) of buildings. In addition, the analysis of meteorological effects integrated with the hillshade parameter was used to obtain the solar PV potential value of the roof in more detail.</p>';
+    };
+
+    info.addTo(map);
+
+    //Choropleth map prnonmw
+    function getColor1(d) {
+        return  d > 12 ? '#800026' :
+                d > 8 ? '#E31A1C' :
+                d > 4 ? '#FD8D3C' :
+                d > 2 ? '#FED976' :
+                        '#FFEDA0';
+    }
+
+    function style1(feature) {
+    return {
+        fillColor: getColor1(feature.properties.prnonmw),
+        // weight: 2,
+        opacity: 1,
+        color: 'white',
+        // dashArray: '3',
+        fillOpacity: 0.7
+        };
+    }
+
+    L.geoJson(prnonmw, {style: style1}).addTo(prnonmw_json);
+
+    // //Choropleth map kon_energi
+    function getColor2(e) {
+        return  e > 5 ? '#800026' :
+                e > 4 ? '#E31A1C' :
+                e > 3 ? '#FD8D3C' :
+                e > 2 ? '#00FFFF' :
+                        '#000cfa';
+    }
+
+    function style2(feature) {
+    return {
+        fillColor: getColor2(feature.properties.Kon_energi),
+        // weight: 2,
+        opacity: 1,
+        color: 'white',
+        // dashArray: '3',
+        fillOpacity: 0.7
+        };
+    }
+
+    L.geoJson(konsumsi_energi, {style: style2}).addTo(konsumsi_energi_json);
+
+    // //Choropleth map solar_pv
+    function getColor3(f) {
+        return  f > 200 ? '#800026' :
+                f > 180 ? '#E31A1C' :
+                f > 160 ? '#FD8D3C' :
+                f > 140 ? '#FED976' :
+                        '#FFEDA0';
+    }
+
+    function style3(feature) {
+    return {
+        fillColor: getColor3(feature.properties.Solar_PV),
+        // weight: 2,
+        opacity: 1,
+        color: 'white',
+        // dashArray: '3',
+        fillOpacity: 0.7
+        };
+    }
+
+    L.geoJson(solar_pv, {style: style3}).addTo(solar_pv_json);
+    
+
+    //Legenda Prioritas
+    var legend1 = L.control({position: 'bottomleft'});
+
+    legend1.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [0, 2, 4, 8, 12],
+            labels = [];
+
+        div.innerHTML +=
+                '<h2>Prioritas</h2>';
+
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + getColor1(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+        }
+
+        return div;
+    };
+
+    legend1.addTo(map);
+
+    //Legenda Konsumsi Energi
+    var legend2 = L.control({position: 'bottomleft'});
+
+    legend2.onAdd = function (map) {
+        
+
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [0, 2, 3, 4, 5],
+            labels = [];
+
+            div.innerHTML +=
+                '<h2>Konsumsi Energi</h2>';
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + getColor2(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + ' MWh<br>' : '+');
+        }
+
+        return div;
+    };
+
+    legend2.addTo(map);
+
+    //Legenda Solar PV
+    var legend3 = L.control({position: 'bottomleft'});
+
+    legend3.onAdd = function (map) {
+        
+
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [0, 140, 160, 180, 200],
+            labels = [];
+
+            div.innerHTML +=
+                '<h2>Solar PV</h2>';
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + getColor3(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + ' kWh/m2<br>' : '+');
+        }
+
+        return div;
+    };
+
+    legend3.addTo(map);
+
+
+</script>
+
+
+
+</body>
+</html>
